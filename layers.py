@@ -11,7 +11,7 @@ class L:
         self.output = None
 
     # X: (n, m0)
-    def forward(self, X):
+    def forward(self, X, update=True):
         return self.output
 
     def backward(self, y, eta):
@@ -23,20 +23,23 @@ class Layer(L):
     def __init__(self, input_size, output_size):
         super(Layer, self).__init__(input_size, output_size)
         # self.weights = np.random.randn(input_size, output_size) * 0.01
-        self.weights = np.random.randn(input_size, output_size) * 0.1
+        # self.weights = np.random.randn(input_size, output_size) * 0.1
+        self.weights = np.random.randn(input_size, output_size)
         self.biases = np.zeros((1, output_size))
         # print("weights: ", self.weights)
         # print("bias: ", self.biases)
 
     # X: (n, m0)
-    def forward(self, X):
+    def forward(self, X, update=True):
         assert (X.shape[1] == self.input_size)
-        # print("layer.forward:", X)
-        self.input = X
-        # X: (n, m0), w: (m0, m1)
-        self.output = X @ self.weights + self.biases
-        # print("layer.output:", self.output)
-        return self.output
+        if update:
+            self.input = X
+            # X: (n, m0), w: (m0, m1)
+            self.output = X @ self.weights + self.biases
+            # print("layer.output:", self.output)
+            return self.output
+        else:
+            return X @ self.weights + self.biases
 
     # y: dL/dz : (n, m1)
     # return dL/da: (n, m0)
@@ -51,43 +54,34 @@ class Layer(L):
         return grad_input
 
 
+class Conv2D(L):
+    def __init__(self, input_shape, num_filters, kernel_size, stride=1, padding=0):
+        """
+                :param input_shape: (height, width, channels)
+                :param num_filters: Number of convolutional filters
+                :param kernel_size: Size of the convolutional kernel (filter height and width)
+                :param stride: Stride of the convolution
+                :param padding: Amount of zero-padding around the input
+        """
+        input_height, input_width, input_channels = input_shape
+        self.input_shape = input_shape
+        self.num_filters = num_filters
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
 
-class Activation(L):
-    def __init__(self, size):
-        super(Activation, self).__init__(size, size)
+        # Initialize weights and biases
+        self.weights = np.random.randn(num_filters, input_channels, kernel_size, kernel_size) * 0.1
+        self.biases = np.zeros((num_filters, 1))
 
+        # Compute output dimensions
+        self.output_height = (input_height - kernel_size + 2 * padding) // stride + 1
+        self.output_width = (input_width - kernel_size + 2 * padding) // stride + 1
+        self.output_size = (self.output_height, self.output_width, num_filters)
 
-class Sigmoid(Activation):
-    def __init__(self, size):
-        super(Sigmoid, self).__init__(size)
-
-    # X: (n, m)
-    def forward(self, X):
-        assert (X.shape[1] == self.input_size)
-        # print("sigmoid.forward:", X)
-        self.input = X
-        # X: (n, m)
-        self.output = 1 / (1 + np.exp(-X))
-        # print("sigmoid.output:", self.output)
-        return self.output
-
-    # y: dL/da : (n, m)
-    # return dL/dz : (n, m)
-    def backward(self, y, eta):
-        sigmoid = 1 / (1 + np.exp(-self.input))
-        self.input = y * sigmoid * (1 - sigmoid)
-        return self.input
+        self.input = None
+        self.output = None
 
 
 if __name__ == '__main__':
-    X = np.array([[0.39, 0.82, 0.36],
- [0.55, 0.24, 0.41 ],
- [0.23, 0.97, 0.82],
- [0.01, 0.49, 0.27]])
-    y = np.array([[0.06],
- [0.26],
- [0.21],
- [0.33]])
-
-    layer = Layer(3, 1)
-    layer.forward(X)
+    pass
