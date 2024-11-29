@@ -1,63 +1,68 @@
 import numpy as np
 import random
+import re
 from PIL import Image, ImageDraw, ImageFont
 import string
 import os
 
 
 class FontGenerator:
-    def __init__(self):
-        pass
+    def __init__(self, font_range, image_size=(64, 64)):
+        self.X = None
+        self.y = None
 
-    def generate_text_image(self, text, font_path, output_path, image_size=(64, 64), font_size=40):
-        image = Image.new("L", image_size, "white")
-        draw = ImageDraw.Draw(image)
+        self.font_range = font_range
+        self.image_size = image_size
 
-        font = ImageFont.truetype(font_path, font_size)
-
-        w, h = draw.textbbox(text, font=font)
-
-    def generate_flattened_chars_dataset(self, output_file, font_path, font_size, num_samples=20, image_size=(64, 64), to_image=False, image_path=""):
+    def generate_flattened_arrays_for_single_letter(self, font_path, num_samples=20, to_image=False, image_dir=""):
         """
-        Generates a dataset of single letters rendered in multiple fonts and saves as an .npz file.
+        Generates a 2d array of flattened images of a specific font, and optionally saves as images.
 
         Parameters:
-            output_file (str): Path to save the .npz file.
-            fonts_dir (str): Path to the directory containing font files (.ttf or .otf).
-            image_size (tuple): Size of each image (width, height).
+            font_path (str): Font path.
             num_samples (int): Number of samples per letter per font.
-            grayscale (bool): Convert images to grayscale if True, otherwise keep RGB.
+            to_image (bool): Whether saving as png files.
+            image_dir (str): Directory of saved images.
 
         Returns:
-            None
+            (np.ndarray): 2d array of samples of flattened array
         """
 
-        letters = string.printable[:94]
+        # letters and digits and symbols
+        letters = string.printable[:62]
 
 
         image_data = []
+        fontname = re.search(r"(\w+)\.ttf", font_path).group(1)
 
-        font = ImageFont.truetype(font_path, size=font_size)
+        for font_size in self.font_range:
+            font = ImageFont.truetype(font_path, size=font_size)
 
-        for letter in letters:
-            for i in range(num_samples):
-                # Create a blank image
-                image = Image.new("L", image_size, "white")
-                draw = ImageDraw.Draw(image)
 
-                # Load font and calculate size to center the letter
-                w, h = draw.textbbox((0, 0), letter, font=font)[2:]
+            for idx, letter in enumerate(letters):
+                for i in range(num_samples):
+                    # Create a blank image
+                    image = Image.new("L", self.image_size, "white")
+                    draw = ImageDraw.Draw(image)
 
-                # Draw the letter
-                draw.text((int((image_size[0]-w)*random.random()), int((image_size[1]-h) * random.random())), letter, fill="black", font=font)
+                    # Load font and calculate size to center the letter
+                    w, h = draw.textbbox((0, 0), letter, font=font)[2:]
 
-                # Convert to numpy array and normalize
-                img_array = np.array(image, dtype=np.float32) / 255.0
+                    # Draw the letter
+                    draw.text((int((self.image_size[0]-w)*random.random()), int((self.image_size[1]-h) * random.random())), letter, fill="black", font=font)
 
-                if to_image:
-                    image.save(f"{image_path}/{letter + str(i)}.png")
-                # Append to dataset
-                image_data.append(img_array.flatten())
+                    # Convert to numpy array and normalize
+                    img_array = np.array(image, dtype=np.float32) / 255.0
+
+                    if to_image:
+                        if image_dir == '' or image_dir.endswith("/"):
+                            image.save(f"{image_dir}{fontname}-size-{font_size}-char-{idx}-idx-{str(i)}.png")
+                        else:
+                            image.save(f"{image_dir}/{fontname}-size-{font_size}-char-{idx}-idx-{str(i)}.png")
+                            # image.save("pics/test.png")
+
+                    # Append to dataset
+                    image_data.append(img_array.flatten())
 
 
 
@@ -68,6 +73,41 @@ class FontGenerator:
         # np.savez_compressed(output_file, images=image_data, labels=labels, label_map=label_map)
         # print(f"Dataset saved to {output_file}")
 
+    def generate_and_append_dataset(self, font_paths0, font_paths1, num_samples=20, to_image=False, image_path=""):
+        if self.X is None:
+            xs = np.empty((0, self.image_size[0]*self.image_size[1]))
+        else:
+            xs = self.X
+
+        if self.y is None:
+            ys = np.empty((0, 1))
+        else:
+            ys = self.y
+
+        for path in font_paths0:
+            x = self.generate_flattened_arrays_for_single_letter(path, num_samples, to_image, image_path)
+            y = np.array([0 for i in range(x.shape[0])]).reshape((-1, 1))
+            xs = np.vstack((xs, x))
+            ys = np.vstack((ys, y))
+
+        for path in font_paths1:
+            x = self.generate_flattened_arrays_for_single_letter(path, num_samples, to_image, image_path)
+            y = np.array([1 for i in range(x.shape[0])]).reshape((-1, 1))
+            xs = np.vstack((xs, x))
+            ys = np.vstack((ys, y))
+
+        self.X = xs
+        self.y = ys
+
+
+    def save_arrays(self, output_file):
+        assert (self.X is not None and self.y is not None)
+        np.savez_compressed(output_file, X=self.X, y=self.y)
+
+    def load_arrays(self, output_file):
+        data = np.load(output_file)
+        self.X = data['X']
+        self.y = data['y']
 
 # n by m input and binary output
 def generator(n, m, min_val, max_val, func, error=1):
@@ -87,5 +127,7 @@ def generator(n, m, min_val, max_val, func, error=1):
 
 
 if __name__ == '__main__':
-    font_generator = FontGenerator()
-    font_generator.generate_flattened_chars_dataset("", )
+    font_generator = FontGenerator(range(40, 41, 1), (64, 64))
+    font_generator.generate_and_append_dataset(["fonts/cour.ttf", "fonts/courbd.ttf", "fonts/courbi.ttf", "fonts/couri.ttf"], ["fonts/comic.ttf", "fonts/comicbd.ttf", "fonts/comici.ttf", "fonts/comicz.ttf"], 1, True, "pics")
+    # font_generator.generate_flattened_arrays_for_single_letter("fonts/cour.ttf", range(30, 32, 2), 1, (64, 64), True, "pics")
+
