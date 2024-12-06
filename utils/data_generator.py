@@ -127,7 +127,7 @@ def generator(n, m, min_val, max_val, func, error=1):
 
 
 if __name__ == '__main__':
-    font_generator = FontGenerator(range(40, 41, 1), (64, 64))
+    font_generator = FontGenerator(range(60, 61, 1), (64, 64))
     font_generator.generate_and_append_dataset(["fonts/cour.ttf", "fonts/courbd.ttf", "fonts/courbi.ttf", "fonts/couri.ttf"], ["fonts/comic.ttf", "fonts/comicbd.ttf", "fonts/comici.ttf", "fonts/comicz.ttf"], 1, True, "pics")
     # font_generator.generate_flattened_arrays_for_single_letter("fonts/cour.ttf", range(30, 32, 2), 1, (64, 64), True, "pics")
 
