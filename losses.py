@@ -24,7 +24,7 @@ class CrossEntropy(Loss):
     def compute_loss(self, y_hat, y):
         # print("y_hat and y:", np.hstack((y_hat, y)))
         assert (y_hat.shape == y.shape and y_hat.shape[1] == 1)
-        print("accuracy:", sum([(y_hat[i][0]>0.5 and y[i][0]) or (y_hat[i][0]<0.5 and not y[i][0]) for i in range(y_hat.shape[0])]) / y_hat.shape[0])
+        print("CrossEntropy accuracy:", sum([(y_hat[i][0]>0.5 and y[i][0]) or (y_hat[i][0]<0.5 and not y[i][0]) for i in range(y_hat.shape[0])]) / y_hat.shape[0])
 
         loss = -1 / y_hat.shape[0] * np.sum(y * np.log(y_hat + 1e-8) + (1 - y) * np.log(1 - y_hat + 1e-8))
         return loss

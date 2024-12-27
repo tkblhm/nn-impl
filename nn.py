@@ -55,6 +55,7 @@ class NeuralNetwork:
     # X, y: ndarray, loss_function: Loss, epoch: gradient descent iterations, eta: learning rate, training_set: proportion of training set, visualisation: whether to record intermediate data
     def train(self, X, y, loss_function, epoch=50, eta=0.01, training_set=1, visualisation=False):
         assert (epoch > 0 and eta > 0 and 1 >= training_set > 0)
+        print("Start training")
         X = self.standardise_input(X)
         self.epoch = epoch
         X_train = None
@@ -79,6 +80,8 @@ class NeuralNetwork:
                 self.training_losses = []
                 self.test_losses = []
                 for i in range(epoch):
+                    if i == 5:
+                        pass
                     y_hat = self.forward(X_train)
                     loss = loss_function.compute_loss(y_hat, y_train)
                     self.training_losses.append(loss)
