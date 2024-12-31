@@ -14,6 +14,7 @@ class Sigmoid(Activation):
     # X: (n, m)
     def forward(self, X, update=True):
         assert (X.shape[1] == self.input_size)
+        print()
         if update:
             self.input = X
             # X: (n, m)

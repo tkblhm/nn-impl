@@ -46,7 +46,7 @@ class Visualisations:
 
 
 if __name__ == '__main__':
-    nn = NeuralNetwork()
+    nn = NeuralNetwork(100)
     size = 2000
     nn.add_layer(Layer(2, 10))
     # nn.add_layer(Sigmoid(5))

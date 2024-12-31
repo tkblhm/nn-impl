@@ -111,7 +111,8 @@ class FontGenerator:
 
     def shuffle(self):
         assert (self.X is not None and self.y is not None)
-        shuffled = np.random.shuffle(np.hstack((self.X, self.y)))
+        shuffled = np.hstack((self.X, self.y))
+        np.random.shuffle(shuffled)
         self.X, self.y = shuffled[:,:-1], shuffled[:,-1].reshape((-1,1))
 
 # n by m input and binary output

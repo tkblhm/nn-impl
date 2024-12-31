@@ -3,6 +3,7 @@ from activations import *
 from losses import *
 from utils.data_generator import *
 from utils.data_reader import *
+# from visualisations import *
 
 import numpy as np
 
@@ -54,7 +55,7 @@ class NeuralNetwork:
 
     # X, y: ndarray, loss_function: Loss, epoch: gradient descent iterations, eta: learning rate, training_set: proportion of training set, visualisation: whether to record intermediate data
     def train(self, X, y, loss_function, epoch=50, eta=0.01, training_set=1, visualisation=False):
-        assert (epoch > 0 and eta > 0 and 1 >= training_set > 0)
+        assert (epoch > 0 and eta > 0 and 1 >= training_set > 0 and X.shape[0] == y.shape[0])
         print("Start training")
         X = self.standardise_input(X)
         self.epoch = epoch
@@ -80,8 +81,6 @@ class NeuralNetwork:
                 self.training_losses = []
                 self.test_losses = []
                 for i in range(epoch):
-                    if i == 5:
-                        pass
                     y_hat = self.forward(X_train)
                     loss = loss_function.compute_loss(y_hat, y_train)
                     self.training_losses.append(loss)
@@ -91,12 +90,36 @@ class NeuralNetwork:
 
                     grad = loss_function.gradient(y_hat, y_train)
                     self.backward(grad, eta)
+            else:
+                self.training_losses = [0 for i in range(epoch)]
+                self.test_losses = [0 for i in range(epoch)]
+                for i in range(epoch):
+                    batches = (X_train.shape[0] + 1) // self.batch
+                    for b in range(batches):
+                        sli = slice(b*self.batch, b* self.batch + self.batch, 1)
+                        y_hat = self.forward(X_train[sli])
+                        loss = loss_function.compute_loss(y_hat, y_train[sli])
+                        self.training_losses[i] += loss
+                        if (training_set < 1):
+                            loss = loss_function.compute_loss(self.forward(X_test, False), y_test)
+                            self.test_losses[i] += loss
+
+                        grad = loss_function.gradient(y_hat, y_train[sli])
+                        self.backward(grad, eta)
         else:
             if self.batch < 1:
                 for i in range(epoch):
                     y_hat = self.forward(X_train)
                     grad = loss_function.gradient(y_hat, y_train)
                     self.backward(grad, eta)
+            else:
+                for i in range(epoch):
+                    batches = (X_train.shape[0] + 1) // self.batch
+                    for b in range(batches):
+                        sli = slice(b*self.batch, b* self.batch + self.batch, 1)
+                        y_hat = self.forward(X_train[sli])
+                        grad = loss_function.gradient(y_hat, y_train[sli])
+                        self.backward(grad, eta)
         print("weights: ", self.layers[0].weights)
         print("bias: ", self.layers[0].biases)
 
@@ -104,13 +127,19 @@ class NeuralNetwork:
 
 
 if __name__ == '__main__':
-    nn = NeuralNetwork()
-    size = 100
-    layer = Layer(2, 1)
+    nn = NeuralNetwork(50)
+    size = 500
+    layer = Layer(2, 16)
     nn.add_layer(layer)
+    nn.add_layer(ReLU(16))
+    nn.add_layer(Layer(16, 4))
+    nn.add_layer(ReLU(4))
+    nn.add_layer(Layer(4, 1))
     nn.add_layer(Sigmoid(1))
-    # X, y = generator(size, 2, 0, 5, lambda x, y: x*x+y*y<16)
-    X, y = csv_reader(r"C:\Users\hxtx1\Downloads\Logistic_Regression_Data.csv", 2)
+    X, y = generator(size, 2, 0, 5, lambda x, y: (x-2)*(x-2)+(y-2)*(y-2)<4)
     print("X: ", X)
     print("y: ", y)
-    nn.train(X, y, CrossEntropy(), 50, 0.01)
+    nn.train(X, y, CrossEntropy(), 500, 0.0001, 0.9)
+    # vis = Visualisations(nn)
+    # vis.plot_learning_curves()
+    # vis.plot_datapoints((0, 5), (0, 5), 100)

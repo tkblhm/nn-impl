@@ -22,9 +22,9 @@ class Layer(L):
     # weights: (m_0, m_1), biases: (1, m_1)
     def __init__(self, input_size, output_size):
         super(Layer, self).__init__(input_size, output_size)
-        # self.weights = np.random.randn(input_size, output_size) * 0.01
+        self.weights = np.random.randn(input_size, output_size) * 0.01
         # self.weights = np.random.randn(input_size, output_size) * 0.1
-        self.weights = np.random.randn(input_size, output_size)
+        # self.weights = np.random.randn(input_size, output_size)
         self.biases = np.zeros((1, output_size))
         # print("weights: ", self.weights)
         # print("bias: ", self.biases)
