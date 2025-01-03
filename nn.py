@@ -17,6 +17,7 @@ class NeuralNetwork:
         self.epoch = 0
         self.training_losses = []
         self.test_losses = []
+        self.trained = False
 
 
     def standardise_input(self, X):
@@ -122,7 +123,7 @@ class NeuralNetwork:
                         self.backward(grad, eta)
         print("weights: ", self.layers[0].weights)
         print("bias: ", self.layers[0].biases)
-
+        self.trained = True
 
 
 
