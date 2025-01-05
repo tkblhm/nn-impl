@@ -1,10 +1,11 @@
+from nn import *
+
+
 import matplotlib
 from matplotlib.lines import lineStyles
-
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-from nn import *
 
 
 class Visualisations:

@@ -1,4 +1,4 @@
-from layers import *
+from layers import L
 
 import numpy as np
 

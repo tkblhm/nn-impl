@@ -2,3 +2,5 @@ utils/combined.txt
 curve.png
 distribution.png
 utils/pics
+resources/nn.pkl
+resources/arrays.npz

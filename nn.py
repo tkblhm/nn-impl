@@ -1,11 +1,10 @@
-from layers import *
-from activations import *
-from losses import *
-from utils.data_generator import *
-from utils.data_reader import *
-# from visualisations import *
+from layers import Layer
+from activations import ReLU, Sigmoid
+from losses import CrossEntropy
+from utils.data_generator import generator
 
 import numpy as np
+import pickle
 
 
 class NeuralNetwork:
@@ -18,7 +17,6 @@ class NeuralNetwork:
         self.training_losses = []
         self.test_losses = []
         self.trained = False
-
 
     def standardise_input(self, X):
         if self.mean is None:
@@ -55,7 +53,7 @@ class NeuralNetwork:
         return value
 
     # X, y: ndarray, loss_function: Loss, epoch: gradient descent iterations, eta: learning rate, training_set: proportion of training set, visualisation: whether to record intermediate data
-    def train(self, X, y, loss_function, epoch=50, eta=0.01, training_set=1, visualisation=False):
+    def train(self, X, y, loss_function, epoch=50, eta=0.01, training_set=1.0, visualisation=False):
         assert (epoch > 0 and eta > 0 and 1 >= training_set > 0 and X.shape[0] == y.shape[0])
         print("Start training")
         X = self.standardise_input(X)
@@ -77,7 +75,6 @@ class NeuralNetwork:
 
         if visualisation:
 
-
             if self.batch < 1:
                 self.training_losses = []
                 self.test_losses = []
@@ -97,7 +94,7 @@ class NeuralNetwork:
                 for i in range(epoch):
                     batches = (X_train.shape[0] + 1) // self.batch
                     for b in range(batches):
-                        sli = slice(b*self.batch, b* self.batch + self.batch, 1)
+                        sli = slice(b * self.batch, b * self.batch + self.batch, 1)
                         y_hat = self.forward(X_train[sli])
                         loss = loss_function.compute_loss(y_hat, y_train[sli])
                         self.training_losses[i] += loss
@@ -117,7 +114,7 @@ class NeuralNetwork:
                 for i in range(epoch):
                     batches = (X_train.shape[0] + 1) // self.batch
                     for b in range(batches):
-                        sli = slice(b*self.batch, b* self.batch + self.batch, 1)
+                        sli = slice(b * self.batch, b * self.batch + self.batch, 1)
                         y_hat = self.forward(X_train[sli])
                         grad = loss_function.gradient(y_hat, y_train[sli])
                         self.backward(grad, eta)
@@ -125,6 +122,9 @@ class NeuralNetwork:
         print("bias: ", self.layers[0].biases)
         self.trained = True
 
+    def save(self, file_path):
+        with open(file_path, "wb") as file:
+            pickle.dump(self, file)
 
 
 if __name__ == '__main__':
@@ -137,10 +137,7 @@ if __name__ == '__main__':
     nn.add_layer(ReLU(4))
     nn.add_layer(Layer(4, 1))
     nn.add_layer(Sigmoid(1))
-    X, y = generator(size, 2, 0, 5, lambda x, y: (x-2)*(x-2)+(y-2)*(y-2)<4)
+    X, y = generator(size, 2, 0, 5, lambda x, y: (x - 2) * (x - 2) + (y - 2) * (y - 2) < 4)
     print("X: ", X)
     print("y: ", y)
     nn.train(X, y, CrossEntropy(), 500, 0.0001, 0.9)
-    # vis = Visualisations(nn)
-    # vis.plot_learning_curves()
-    # vis.plot_datapoints((0, 5), (0, 5), 100)

@@ -6,37 +6,61 @@ from utils.data_generator import FontGenerator
 
 import numpy as np
 from PIL import Image
+import pickle
 
 from visualisations import Visualisations
 
 
-class Recogniser:
-    def __init__(self, nn: NeuralNetwork):
-        assert nn.trained
-        self.nn = nn
+class FontNet:
+    def __init__(self):
+        self.net = None
+        self.dataset_path = "resources/arrays.npz"
+        self.net_path = "resources/nn.pkl"
+
+    def generate_and_save_dataset(self):
+        font_generator = FontGenerator(range(30, 60, 2))
+        font_generator.generate_and_append_dataset(
+            ["utils/fonts/cour.ttf", "utils/fonts/courbd.ttf", "utils/fonts/courbi.ttf", "utils/fonts/couri.ttf"],
+            ["utils/fonts/comic.ttf", "utils/fonts/comicbd.ttf", "utils/fonts/comici.ttf", "utils/fonts/comicz.ttf"],
+            10, False, "utils/pics")
+        font_generator.shuffle()
+        font_generator.save_arrays(self.dataset_path)
+        print(font_generator.X, font_generator.y)
+
+    def load_dataset(self):
+        font_generator = FontGenerator(range(30, 60, 2))
+        font_generator.load_arrays(self.dataset_path)
+        print(font_generator.X, font_generator.y)
+        return (font_generator.X, font_generator.y)
+
+    def train_and_save_net(self):
+        self.net = NeuralNetwork(2000)
+        self.net.add_layer(Layer(4096, 512), ReLU)
+        self.net.add_layer(Layer(512, 128), ReLU)
+        self.net.add_layer(Layer(128, 1), Sigmoid)
+
+        X, y = self.load_dataset()
+        self.net.train(X, y, CrossEntropy(), 32, 0.0001, 0.9, True)
+        vis = Visualisations(self.net)
+        vis.plot_learning_curves()
+        self.net.save(self.net_path)
+
+    def load_net(self):
+        with open(self.net_path, "rb") as file:
+            self.net = pickle.load(file)
 
     def recognise(self, image_path):
-        image =Image.open(image_path).convert("L")
-        arr = np.array(image).flatten().reshape((1, -1))
+        image = Image.open(image_path).convert("L")
+        image = image.crop((0, 0, 64, 64))
+        arr = np.array(image).flatten().reshape((1, -1)) / 255.0
         print(arr)
-        arr = self.nn.standardise_input(arr)
-        result = self.nn.forward(arr, update=False)
+        print(arr.size)
+        arr = self.net.standardise_input(arr)
+        result = self.net.forward(arr, update=False)
         print(result)
 
 
 if __name__ == '__main__':
-    font_generator = FontGenerator(range(30, 60, 2))
-    # font_generator.generate_and_append_dataset(["utils/fonts/cour.ttf", "utils/fonts/courbd.ttf", "utils/fonts/courbi.ttf", "utils/fonts/couri.ttf"], ["utils/fonts/comic.ttf", "utils/fonts/comicbd.ttf", "utils/fonts/comici.ttf", "utils/fonts/comicz.ttf"], 10, False, "utils/pics")
-    # font_generator.save_arrays("resources/arrays.npz")
-    font_generator.load_arrays("resources/arrays.npz")
-    # font_generator.shuffle()
-    # font_generator.save_arrays("resources/arrays.npz")
-    print(font_generator.X, font_generator.y)
-    net = NeuralNetwork(2000)
-    net.add_layer(Layer(4096, 512), ReLU)
-    net.add_layer(Layer(512, 128), ReLU)
-    net.add_layer(Layer(128, 1), Sigmoid)
-
-    net.train(font_generator.X, font_generator.y, CrossEntropy(), 15, 0.0001, 0.9, True)
-    vis = Visualisations(net)
-    vis.plot_learning_curves()
+    font_net = FontNet()
+    font_net.load_net()
+    font_net.recognise("/Users/guo/Desktop/Screenshot 2025-01-05 at 19.15.27.png")
