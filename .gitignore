@@ -3,4 +3,4 @@ curve.png
 distribution.png
 utils/pics
 resources/nn.pkl
-resources/arrays.npz
+#resources/arrays.npz
